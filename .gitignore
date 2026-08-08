@@ -23,3 +23,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Model files
+models/*.prototxt
+models/*.caffemodel
