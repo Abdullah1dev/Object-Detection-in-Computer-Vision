@@ -18,4 +18,3 @@ net = cv2.dnn.readNetFromCaffe(
 )
 
 
-print("MobileNet-SSD model loaded successfully!")
