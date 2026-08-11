@@ -2,6 +2,7 @@ import cv2
 from pathlib import Path
 
 
+
 # Get the project root directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -17,4 +18,26 @@ net = cv2.dnn.readNetFromCaffe(
     str(MODEL_PATH)
 )
 
+print("MobileNet-SSD model loaded successfully!")
 
+
+# =========================
+# Image path
+# =========================
+
+IMAGE_PATH = BASE_DIR / "images" / "cat.jpg"
+
+
+# =========================
+# Load image
+# =========================
+
+image = cv2.imread(str(IMAGE_PATH))
+
+if image is None:
+    raise FileNotFoundError(
+        f"Could not load image: {IMAGE_PATH}"
+    )
+
+print("Image loaded successfully!")
+print("Image shape:", image.shape)
