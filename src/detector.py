@@ -55,3 +55,15 @@ blob = cv2.dnn.blobFromImage(
 )
 
 print("Blob shape:", blob.shape)
+
+
+
+
+# =========================
+# Run inference
+# =========================
+
+net.setInput(blob)
+
+detections = net.forward()
+
