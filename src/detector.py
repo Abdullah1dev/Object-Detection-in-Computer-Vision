@@ -67,3 +67,21 @@ net.setInput(blob)
 
 detections = net.forward()
 
+
+# =========================
+# Process detections
+# =========================
+
+CONFIDENCE_THRESHOLD = 0.5
+
+
+for i in range(detections.shape[2]):
+
+    confidence = detections[0, 0, i, 2]
+
+    if confidence > CONFIDENCE_THRESHOLD:
+
+        print(
+            f"Detection {i}: "
+            f"Confidence = {confidence:.2f}"
+        )
