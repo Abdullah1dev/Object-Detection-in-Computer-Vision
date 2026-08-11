@@ -41,3 +41,17 @@ if image is None:
 
 print("Image loaded successfully!")
 print("Image shape:", image.shape)
+
+
+
+# Convert image into a blob
+blob = cv2.dnn.blobFromImage(
+    image,
+    scalefactor=1 / 127.5,
+    size=(300, 300),
+    mean=(127.5, 127.5, 127.5),
+    swapRB=True,
+    crop=False
+)
+
+print("Blob shape:", blob.shape)
