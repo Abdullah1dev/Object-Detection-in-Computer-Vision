@@ -8,18 +8,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# ============================================================
-# Model paths
-# ============================================================
-
 PROTOTXT_PATH = BASE_DIR / "models" / "deploy.prototxt"
 MODEL_PATH = BASE_DIR / "models" / "mobilenet_iter_73000.caffemodel"
 
 
 # ============================================================
-# Class labels
-# MobileNet-SSD was trained on these 20 object classes
+# MobileNet-SSD classes
 # ============================================================
 
 CLASSES = [
@@ -47,79 +41,60 @@ CLASSES = [
 ]
 
 
-# ============================================================
-# Load MobileNet-SSD model
-# ============================================================
-
-net = cv2.dnn.readNetFromCaffe(
-    str(PROTOTXT_PATH),
-    str(MODEL_PATH)
-)
-
-print("MobileNet-SSD model loaded successfully!")
-
-
-# ============================================================
-# Image path
-# ============================================================
-
-IMAGE_PATH = BASE_DIR / "images" / "cat.jpg"
-
-
-# ============================================================
-# Load image
-# ============================================================
-
-image = cv2.imread(str(IMAGE_PATH))
-
-if image is None:
-    raise FileNotFoundError(
-        f"Could not load image: {IMAGE_PATH}"
-    )
-
-print("Image loaded successfully!")
-print("Image shape:", image.shape)
-
-
-# ============================================================
-# Convert image into a blob
-# ============================================================
-
-blob = cv2.dnn.blobFromImage(
-    image,
-    scalefactor=1 / 127.5,
-    size=(300, 300),
-    mean=(127.5, 127.5, 127.5),
-    swapRB=True,
-    crop=False
-)
-
-print("Blob shape:", blob.shape)
-
-
-# ============================================================
-# Run inference
-# ============================================================
-
-net.setInput(blob)
-
-detections = net.forward()
-
-print("Detection shape:", detections.shape)
-
-
-# ============================================================
-# Process detections
-# ============================================================
-
 CONFIDENCE_THRESHOLD = 0.5
 
 
-for i in range(detections.shape[2]):
+# ============================================================
+# Load model
+# ============================================================
 
-    confidence = detections[0, 0, i, 2]
+def load_model():
 
-    if confidence > CONFIDENCE_THRESHOLD:
+    net = cv2.dnn.readNetFromCaffe(
+        str(PROTOTXT_PATH),
+        str(MODEL_PATH)
+    )
+
+    print("MobileNet-SSD model loaded successfully!")
+
+    return net
+
+
+# ============================================================
+# Detect objects
+# ============================================================
+
+def detect_objects(image, net):
+
+    # Convert image into a blob
+    blob = cv2.dnn.blobFromImage(
+        image,
+        scalefactor=1 / 127.5,
+        size=(300, 300),
+        mean=(127.5, 127.5, 127.5),
+        swapRB=True,
+        crop=False
+    )
+
+    # Give blob to the neural network
+    net.setInput(blob)
+
+    # Run inference
+    detections = net.forward()
+
+    results = []
+
+    # Image dimensions
+    (h, w) = image.shape[:2]
+
+    # Process detections
+    for i in range(detections.shape[2]):
+
+        confidence = detections[0, 0, i, 2]
+
+        # Ignore low-confidence detections
+        if confidence < CONFIDENCE_THRESHOLD:
+            continue
 
         # Get class ID
         class_id = int(detections[0, 0, i, 1])
@@ -127,50 +102,61 @@ for i in range(detections.shape[2]):
         # Convert class ID to label
         label = CLASSES[class_id]
 
-        # Get normalized bounding-box coordinates
+        # Get normalized bounding box
         box = detections[0, 0, i, 3:7]
 
-        # Get image dimensions
-        (h, w) = image.shape[:2]
-
-        # Convert normalized coordinates to pixel coordinates
+        # Convert normalized coordinates to pixels
         startX = int(box[0] * w)
         startY = int(box[1] * h)
 
         endX = int(box[2] * w)
         endY = int(box[3] * h)
 
+        results.append({
+            "label": label,
+            "confidence": float(confidence),
+            "box": (startX, startY, endX, endY)
+        })
+
+    return results
+
+
+# ============================================================
+# Draw detections
+# ============================================================
+
+def draw_detections(image, results):
+
+    output = image.copy()
+
+    for result in results:
+
+        label = result["label"]
+        confidence = result["confidence"]
+
+        startX, startY, endX, endY = result["box"]
+
         # Draw bounding box
         cv2.rectangle(
-            image,
+            output,
             (startX, startY),
             (endX, endY),
             (0, 255, 0),
             2
         )
 
-        # Create label
+        # Create label text
         text = f"{label}: {confidence * 100:.2f}%"
 
         # Draw label
         cv2.putText(
-            image,
+            output,
             text,
-            (startX, startY - 10),
+            (startX, max(startY - 10, 20)),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
             (0, 255, 0),
             2
         )
 
-        print(
-            f"Detection {i}: "
-            f"{label} "
-            f"Confidence = {confidence:.2f}"
-        )
-
-        print(
-            f"Bounding Box: "
-            f"({startX}, {startY}) → "
-            f"({endX}, {endY})"
-        )
+    return output
