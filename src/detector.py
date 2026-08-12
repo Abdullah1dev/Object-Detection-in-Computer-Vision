@@ -136,7 +136,10 @@ def draw_detections(image, results):
 
         startX, startY, endX, endY = result["box"]
 
+        # -----------------------------------------
         # Draw bounding box
+        # -----------------------------------------
+
         cv2.rectangle(
             output,
             (startX, startY),
@@ -145,18 +148,59 @@ def draw_detections(image, results):
             2
         )
 
-        # Create label text
-        text = f"{label}: {confidence * 100:.2f}%"
+        # -----------------------------------------
+        # Create label
+        # -----------------------------------------
 
-        # Draw label
+        text = f"{label.title()} {confidence * 100:.2f}%"
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.5
+        thickness = 1
+
+        # Get text dimensions
+        (text_width, text_height), baseline = cv2.getTextSize(
+            text,
+            font,
+            font_scale,
+            thickness
+        )
+
+        # -----------------------------------------
+        # Label background coordinates
+        # -----------------------------------------
+
+        label_top = max(
+            startY - text_height - baseline - 5,
+            0
+        )
+
+        label_bottom = startY
+
+        label_right = startX + text_width + 10
+
+        # Draw filled rectangle behind text
+        cv2.rectangle(
+            output,
+            (startX, label_top),
+            (label_right, label_bottom),
+            (0, 255, 0),
+            -1
+        )
+
+        # -----------------------------------------
+        # Draw label text
+        # -----------------------------------------
+
         cv2.putText(
             output,
             text,
-            (startX, max(startY - 10, 20)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 255, 0),
-            2
+            (startX + 5, label_bottom - 5),
+            font,
+            font_scale,
+            (0, 0, 0),
+            thickness,
+            cv2.LINE_AA
         )
 
     return output
